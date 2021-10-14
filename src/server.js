@@ -14,9 +14,31 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const server = createServer(app);
+const io = new Server(server, { allowEIO3: true });
+
 app.use("/users", usersRouter);
 app.use("/projects", projectsRouter);
 app.use("/room", chatRouter);
+
+io.on("connection", (socket) => {
+  socket.emit("chat-message", "Hello World"); 
+  
+  socket.on("sendMessage", async ({ message, selectedRoom }) => {
+    socket.join(selectedRoom);
+    await RoomModel.findOneAndUpdate(
+      { id: selectedRoom._id },
+      {
+        $push: { chatHistory: message },
+      }
+    );
+    // socket.to(selectedRoom).emit("message", message);
+  });
+
+  // socket.on("disconnect", () => {
+  //   console.log("disconnected");
+  // });
+});
 
 
 app.use(unAuthorizedHandler);
@@ -29,7 +51,7 @@ const port = process.env.PORT;
 
 mongoose.connect(process.env.MONGO_CONNECTION, { useNewUrlParser: true }).then(() => {
   console.log("Connected to mongo");
-  app.listen(port, () => {
+  server.listen(port, () => {
     console.table(listEndpoints(app));
     console.log("Server listening on port " + port);
   });
