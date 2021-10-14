@@ -2,10 +2,15 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import listEndpoints from "express-list-endpoints";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import usersRouter from "./models/users/index.js";
 import projectsRouter from "./models/projects/index.js";
 import chatRouter from "./models/Room/index.js";
 import { unAuthorizedHandler, notFoundErrorHandler, badRequestErrorHandler, forbiddenErrorHandler, catchAllErrorHandler } from "./errorHandlers.js";
+import sgMail from '@sendgrid/mail'
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
 const app = express();
 app.use(cors());
