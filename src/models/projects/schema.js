@@ -5,10 +5,13 @@ const { Schema, model } = mongoose;
 const projectsSchema = new mongoose.Schema(
   {
     seller: { type: Schema.Types.ObjectId, ref: "user" },
-    title: { type: String },
-    summary: { type: String },
-    location: { type: String },
-    Description: { type: String },
+    title: { type: String, required: true },
+    summary: { type: String, required: true },
+    location: { type: String, required: true },
+    // category: { type: String, required: true,
+    //   // enum: [Design, Communications, Beauty, Entertainment, Photography, Business]
+    // },
+    Description: { type: String, required: true },
     files: { type: String },
     bids: [
       {
