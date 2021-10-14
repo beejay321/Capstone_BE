@@ -42,12 +42,10 @@ usersRouter.post("/login", async (req, res, next) => {
 
 usersRouter.post("/logOut", async (req, res, next) => {
   try {
-    
     if (user) {
       const { accessToken, refreshToken } = await JWTAuthenticate(user);
 
-      // res.cookie("accessToken", req.user.tokens.accessToken, { httpOnly: true });
-      // res.cookie("refreshToken", req.user.tokens.refreshToken, { httpOnly: true });
+      // delete all tokens from local storage
       res.send({ accessToken, refreshToken, username: user.email, _id: user._id });
     } else {
       next(createError(401));

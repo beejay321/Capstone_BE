@@ -1,8 +1,9 @@
 import express from "express";
 import ProjectModel from "./schema.js";
 import UserModel from "../users/schema.js";
-
+import sendMailAfterPayment from "../../mail/index.js";
 import multer from "multer";
+import q2m from "query-to-mongo";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import { JWTAuthenticate, refreshTokens } from "../../auth/tools.js";
@@ -12,11 +13,11 @@ import createError from "http-errors";
 
 const projectsRouter = express.Router();
 
-projectsRouter.post("/", JWTAuthMiddleware, async (req, res, next) => {
+projectsRouter.post("/", async (req, res, next) => {
   try {
     const newProject = new ProjectModel(req.body);
     const response = await newProject.save();
-    const user = req.user;
+    const user = await UserModel.findById("6128d7f565384b4ca09f9406");
     user.projects.push(newProject);
     await user.save();
     res.status(201).send(response);
@@ -26,9 +27,45 @@ projectsRouter.post("/", JWTAuthMiddleware, async (req, res, next) => {
   }
 });
 
+// projectsRouter.get("/", async (req, res, next) => {
+//   try {
+//     const response = await ProjectModel.find().populate("seller", { firstname: 1, lastname: 1, picture: 1 });
+//     res.status(201).send(response);
+//   } catch (error) {
+//     console.log(error);
+//     next(error);
+//   }
+// });
+
 projectsRouter.get("/", async (req, res, next) => {
   try {
-    const response = await ProjectModel.find().populate("seller", { firstname: 1, lastname: 1, picture: 1 });
+    console.log(req.query);
+    console.log(q2m(req.query));
+    const mongoquery = q2m(req.query);
+    // const response = await ProjectModel.find().populate("seller", { firstname: 1, lastname: 1, picture: 1 });
+    const response = await ProjectModel.find(mongoquery.criteria)
+      .populate("seller", { firstname: 1, lastname: 1, picture: 1 })
+      .sort(mongoquery.options.sort)
+      .skip(mongoquery.options.skip)
+      .limit(mongoquery.options.limit);
+    res.status(201).send(response);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
+projectsRouter.get("/category", async (req, res, next) => {
+  try {
+    console.log(req.query);
+    console.log(q2m(req.query));
+    const mongoquery = q2m(req.query);
+    const response = await ProjectModel.find({}, { category: 1 });
+    // const response = await ProjectModel.find(mongoquery.criteria)
+    //   .populate("seller", { firstname: 1, lastname: 1, picture: 1 })
+    //   .sort(mongoquery.options.sort)
+    //   .skip(mongoquery.options.skip)
+    //   .limit(mongoquery.options.limit);
     res.status(201).send(response);
   } catch (error) {
     console.log(error);
@@ -56,8 +93,7 @@ projectsRouter.get("/search/:query", async (req, res, next) => {
   try {
     const regex = new RegExp(req.params.query, "i");
     console.log(regex);
-    // const projects = await ProjectModel.find({ summary: { $regex: regex } });
-    const projects = await ProjectModel.find({ summary: { $regex: req.params.query } });
+    const projects = await ProjectModel.find({ title: { $regex: req.params.query } });
 
     console.log(req.params.query);
     console.log(projects);
@@ -85,6 +121,7 @@ projectsRouter.get("/search/category/:query", async (req, res, next) => {
     next(error);
   }
 });
+const id = "";
 
 projectsRouter.get("/search/:query/:location", async (req, res, next) => {
   try {
@@ -214,24 +251,23 @@ projectsRouter.post("/:id/uploadFile", upload, async (req, res, next) => {
   }
 });
 
-projectsRouter.post("/:id/sendmail", async (req, res, next) => {
+projectsRouter.post("/sendmail/:bidderId", async (req, res, next) => {
   try {
-    const project = await ProjectModel.findById(req.params.id);
-
-    await sendBlogPostMail({
-      to: author.email,
-      title: project,
-      link: `http://localhost:3000/blogs/${blog.id}`,
+    // const project = await ProjectModel.findById(req.params.id);
+    // const bidder = await UserModel.findById(req.params.bidderId);
+    const emailSent = await sendMailAfterPayment({
+      to: req.body.to,
+      title: req.body.title,
+      description: req.body.description,
+      price: req.body.price,
+      link: `http://localhost:3000/confirmProjectDetails/${req.params.bidderId}`,
     });
+    res.send("emailSent");
   } catch (error) {
+    console.log(error);
     next(error);
   }
 });
-
-
-
-
-
 
 // // GET /me/chats
 

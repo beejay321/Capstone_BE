@@ -13,6 +13,11 @@ import cookieParser from "cookie-parser";
 import { verifyToken } from "./auth/tools.js";
 import UserModel from "./models/users/index.js";
 import RoomModel from "./models/Room/index.js";
+import sgMail from '@sendgrid/mail'
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+
+
 
 const app = express();
 app.use(cors());
