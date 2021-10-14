@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import listEndpoints from "express-list-endpoints";
 import { createServer } from "http";
+import { Server } from "socket.io";
 import usersRouter from "./models/users/index.js";
 import projectsRouter from "./models/projects/index.js";
 import chatRouter from "./models/Room/index.js";
