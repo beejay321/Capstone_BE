@@ -42,7 +42,6 @@ projectsRouter.get("/", async (req, res, next) => {
     console.log(req.query);
     console.log(q2m(req.query));
     const mongoquery = q2m(req.query);
-    // const response = await ProjectModel.find().populate("seller", { firstname: 1, lastname: 1, picture: 1 });
     const response = await ProjectModel.find(mongoquery.criteria)
       .populate("seller", { firstname: 1, lastname: 1, picture: 1 })
       .sort(mongoquery.options.sort)
@@ -55,23 +54,7 @@ projectsRouter.get("/", async (req, res, next) => {
   }
 });
 
-projectsRouter.get("/category", async (req, res, next) => {
-  try {
-    console.log(req.query);
-    console.log(q2m(req.query));
-    const mongoquery = q2m(req.query);
-    const response = await ProjectModel.find({}, { category: 1 });
-    // const response = await ProjectModel.find(mongoquery.criteria)
-    //   .populate("seller", { firstname: 1, lastname: 1, picture: 1 })
-    //   .sort(mongoquery.options.sort)
-    //   .skip(mongoquery.options.skip)
-    //   .limit(mongoquery.options.limit);
-    res.status(201).send(response);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
+
 
 projectsRouter.get("/:id", async (req, res, next) => {
   try {
@@ -105,68 +88,6 @@ projectsRouter.get("/search/:query", async (req, res, next) => {
   }
 });
 
-projectsRouter.get("/search/category/:query", async (req, res, next) => {
-  try {
-    const regex = new RegExp(req.params.query, "i");
-    console.log(regex);
-    // const projects = await ProjectModel.find({ summary: { $regex: regex } });
-    const projects = await ProjectModel.find({ category: { $regex: req.params.query } });
-
-    console.log(req.params.query);
-    console.log(projects);
-
-    res.send(projects);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
-const id = "";
-
-projectsRouter.get("/search/:query/:location", async (req, res, next) => {
-  try {
-    const regex = new RegExp(req.params.query, "i");
-    console.log(regex);
-    // const projects = await ProjectModel.find({ summary: { $regex: regex } });
-    // const projects = await ProjectModel.find({ summary: { $regex: req.params.query }  });
-    const projects = await ProjectModel.find({ $and: [{ summary: { $regex: req.params.query } }, { location: { $regex: req.params.location } }] });
-
-    console.log(req.params.query);
-    console.log(projects);
-
-    res.send(projects);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
-
-// const myCart = [];
-
-// projectsRouter.get("/:id/addToCart", async (req, res, next) => {
-//   try {
-//     const currentProject = await ProjectModel.findById(req.params.id);
-//     const newCart = [...myCart];
-//     newCart.push(currentProject);
-//     res.send(newCart);
-//   } catch (error) {
-//     console.log(error);
-//     next(error);
-//   }
-// });
-
-// projectsRouter.get("/myCart", async (req, res, next) => {
-//   try {
-//     const currentProject = await ProjectModel.findById(req.params.id);
-//     const newCart = [...myCart];
-//     newCart.push(currentProject);
-//     res.send(newCart);
-//   } catch (error) {
-//     console.log(error);
-//     next(error);
-//   }
-// });
-
 /**********************************************************/
 projectsRouter.post("/:id/bids", async (req, res, next) => {
   try {
@@ -196,7 +117,7 @@ projectsRouter.get("/:id/bids/:bidID", async (req, res, next) => {
     const bid = allBids.bids.filter((bid) => bid._id == req.params.bidID);
 
     if (bid) {
-      res.send(bid);
+      res.send(bid[0]);
     } else {
       next(createError(404, `bid ${req.params.bidID} not found `));
     }

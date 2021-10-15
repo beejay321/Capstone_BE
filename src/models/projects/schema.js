@@ -8,9 +8,9 @@ const projectsSchema = new mongoose.Schema(
     title: { type: String, required: true },
     summary: { type: String, required: true },
     location: { type: String, required: true },
-    // category: { type: String, required: true,
+    category: { type: String, required: true,
     //   // enum: [Design, Communications, Beauty, Entertainment, Photography, Business]
-    // },
+    },
     Description: { type: String, required: true },
     files: { type: String },
     bids: [
