@@ -21,6 +21,7 @@ chatRouter.get("/history/:roomId", async (req, res) => {
 chatRouter.get("/user/:id", JWTAuthMiddleware, async (req, res) => {
   console.log("req.params.id:", req.params.id);
   console.log("req.user._id:", req.user._id);
+  // const room = await RoomModel.findOne({ $and: [{ members: req.params.id }, { members: req.user._id }] }).populate("members");
   const room = await RoomModel.findOne({ $and: [{ members: req.params.id }, { members: req.user._id }] }).populate("members");
   console.log("room:", room);
 
