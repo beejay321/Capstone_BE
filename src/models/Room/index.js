@@ -14,29 +14,40 @@ const chatRouter = express.Router();
 
 chatRouter.get("/history/:roomId", async (req, res) => {
   // const room = await RoomModel.find();
-  const room = await RoomModel.findById( req.params.roomId )
+  const room = await RoomModel.findById(req.params.roomId);
   res.status(200).send({ chatHistory: room.chatHistory });
 });
-
-chatRouter.get("/user/:id", JWTAuthMiddleware, async (req, res) => {
-  console.log("req.params.id:", req.params.id);
-  console.log("req.user._id:", req.user._id);
-  // const room = await RoomModel.findOne({ $and: [{ members: req.params.id }, { members: req.user._id }] }).populate("members");
-  const room = await RoomModel.findOne({ $and: [{ members: req.params.id }, { members: req.user._id }] }).populate("members");
-  console.log("room:", room);
+// get room with 2 users
+chatRouter.get("/user/:userId/:memberId", async (req, res) => {
+  const room = await RoomModel.findOne({ $and: [{ members: req.params.memberId }, { members: req.params.userId }] }).populate("members");
+  console.log("room created");
 
   if (room) {
     res.status(200).send(room);
   } else {
     const newRoom = {
-      members: [req.params.id, req.user._id],
+      members: [req.params.memberId, req.params.userId],
     };
     const chatRoom = new RoomModel(newRoom);
     await chatRoom.save();
 
-    const actualChatRoom = await RoomModel.findOne({ $and: [{ members: req.params.id }, { members: req.user._id }] }).populate("members");
+    const actualChatRoom = await RoomModel.findOne({ $and: [{ members: req.params.userId }, { members: req.params.memberId }] }).populate("members");
     console.log("actualChatRoom:", actualChatRoom);
     res.status(200).send(actualChatRoom);
+  }
+});
+
+// get all rooms with the looged in user    
+
+chatRouter.get("/user/:userId", async (req, res) => {
+  const rooms = await RoomModel.find({ members: req.params.userId }).populate("members");
+
+  console.log("user rooms found");
+
+  if (rooms) {
+    res.status(200).send(rooms);
+  } else {
+    res.status(404).send("rooms not found");
   }
 });
 
