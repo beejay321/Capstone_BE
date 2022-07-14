@@ -18,18 +18,21 @@ const userSchema = new Schema(
     projects: [{ type: Schema.Types.ObjectId, ref: "project" }],
     experience: [
       {
-        position: { type: String },
+        role: { type: String },
         company: { type: String },
+        description: { type: String },
         city: { type: String },
         country: { type: String },
+        startDate: { type: Date },
       },
     ],
     education: [
       {
-        degree: { type: String },
-        institution: { type: String },
-        city: { type: String },
-        country: { type: String },
+        degree: { type: String, required: true },
+        institution: { type: String, required: true },
+        city: { type: String, required: true },
+        country: { type: String, required: true },
+        startDate: { type: Date },
       },
     ],
   },
