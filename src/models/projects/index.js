@@ -13,11 +13,11 @@ import createError from "http-errors";
 
 const projectsRouter = express.Router();
 
-projectsRouter.post("/", async (req, res, next) => {
+projectsRouter.post("/:userId", async (req, res, next) => {
   try {
     const newProject = new ProjectModel(req.body);
     const response = await newProject.save();
-    const user = await UserModel.findById("6128d7f565384b4ca09f9406");
+    const user = await UserModel.findById(req.params.userId);
     user.projects.push(newProject);
     await user.save();
     res.status(201).send(response);
@@ -54,8 +54,6 @@ projectsRouter.get("/", async (req, res, next) => {
   }
 });
 
-
-
 projectsRouter.get("/:id", async (req, res, next) => {
   try {
     const singleProject = await ProjectModel.findById(req.params.id).populate("seller bids.user", { firstname: 1, lastname: 1, picture: 1 });
@@ -89,21 +87,20 @@ projectsRouter.get("/search/:query", async (req, res, next) => {
 });
 
 /**********************************************************/
-projectsRouter.post("/:id/bids", async (req, res, next) => {
+projectsRouter.post("/:projectid/:userId/bids", async (req, res, next) => {
   try {
     // const user = await UserModel.find({}).select("_id");
     // const user = req.user
     // console.log(user);
-    const singleProject = await ProjectModel.findById(req.params.id);
+    const user = await UserModel.findById(req.params.userId);
+    const currentProject = await ProjectModel.findById(req.params.projectid);
     const newBid = req.body;
-    const user = await UserModel.findById("6128d7f565384b4ca09f9406");
-    console.log(user);
     user.myBids.push(newBid);
     await user.save();
 
-    singleProject.bids.push(newBid);
-    await singleProject.save();
-    res.send(singleProject);
+    currentProject.bids.push(newBid);
+    await currentProject.save();
+    res.send(currentProject);
   } catch (error) {
     console.log(error);
     next(error);
@@ -127,21 +124,37 @@ projectsRouter.get("/:id/bids/:bidID", async (req, res, next) => {
   }
 });
 
-projectsRouter.delete("/me", JWTAuthMiddleware, async (req, res, next) => {
+projectsRouter.delete("/:projectId/bids/:bidId", async (req, res, next) => {
   try {
-    await req.user.deleteOne();
+    const projects = await ProjectModel.findById(req.params.projectId);
+    const allBids = projects.bids;
+    const remainingBids = allBids.filter((bid) => bid._id != req.params.bidId);
+    projects.bids = remainingBids;
+    await projects.save();
+    res.send(projects);
+  } catch (error) {
+    next(error);
+  }
+});
+projectsRouter.delete("/:projectId", async (req, res, next) => {
+  try {
+    const project = await ProjectModel.findById(req.params.projectId);
+    console.log(project);
+    await project.deleteOne(project);
   } catch (error) {
     next(error);
   }
 });
 
-projectsRouter.put("/:id", async (req, res, next) => {
+projectsRouter.put("/:projectId", async (req, res, next) => {
   try {
-    const project = await ProjectModel.findById(req.params.id);
-    project.summary = req.body.summary;
-    project.location = req.body.location;
-    project.Description = req.body.Description;
-    project.title = req.body.title;
+    const project = await ProjectModel.findById(req.params.projectId);
+    project.title = req.body.title ? req.body.title : project.title;
+    project.summary = req.body.summary ? req.body.summary : project.summary;
+    project.category = req.body.category ? req.body.category : project.category;
+    project.location = req.body.location ? req.body.location : project.location;
+    project.Description = req.body.Description ? req.body.Description : project.Description;
+
     await project.save();
     res.send(project);
   } catch (error) {
