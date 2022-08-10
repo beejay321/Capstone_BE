@@ -40,13 +40,14 @@ io.on("connection", (socket) => {
     io.emit("message", message.messageToSend);
     // console.log(message);
     socket.join(message.selectedRoom);
-    await RoomModel.findOneAndUpdate(message.selectedRoom._id, {
+    console.log(selectedRoom._id);
+    const room = await RoomModel.findOneAndUpdate(message.selectedRoom._id, {
       $push: { chatHistory: message.messageToSend },
     });
     // console.log(selectedRoom.chatHistory);
     // 629a0a3009af17436aad9b05
     socket.broadcast.emit("to-recipient", message);
-    socket.to(message.selectedRoom).emit("message", message.messageToSend); 
+    socket.to(message.selectedRoom).emit("message", message.messageToSend);
 
     //Send this event to everyone in the room.
     io.sockets.in("room-" + message.selectedRoom).emit("connectToRoom", "You are in room no. " + message.selectedRoom);
