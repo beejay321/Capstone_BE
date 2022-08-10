@@ -13,14 +13,77 @@ import createError from "http-errors";
 
 const projectsRouter = express.Router();
 
-projectsRouter.post("/", async (req, res, next) => {
+projectsRouter.post("/:userId", async (req, res, next) => {
   try {
     const newProject = new ProjectModel(req.body);
     const response = await newProject.save();
-    const user = await UserModel.findById("6128d7f565384b4ca09f9406");
+    const user = await UserModel.findById(req.params.userId);
     user.projects.push(newProject);
     await user.save();
     res.status(201).send(response);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "CapstoneProjects",
+  },
+});
+
+const upload = multer({ storage: cloudinaryStorage }).single("file");
+
+// projectsRouter.post("/file/uploadFile", upload, async (req, res, next) => {
+//   try {
+//     console.log(req.file);
+//     res.send(req.file.path);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
+projectsRouter.post("/:id/uploadFile", upload, async (req, res, next) => {
+  try {
+    console.log(req.file);
+    const project = await ProjectModel.findById(req.params.id);
+    console.log(project);
+    project.files = req.file.path;
+    // project.files.push(req.file.path);
+    await project.save();
+    res.send(project);
+  } catch (error) {
+    next(error);
+  }
+});
+
+projectsRouter.put("/:id/uploadFile", upload, async (req, res, next) => {
+  try {
+    console.log(req.file);
+    const project = await ProjectModel.findById(req.params.id);
+    console.log(project);
+    // project.files = req.file.path;
+    project.files.push(req.file.path);
+    await project.save();
+    res.send(project.files);
+  } catch (error) {
+    next(error);
+  }
+});
+
+projectsRouter.put("/:projectId", async (req, res, next) => {
+  try {
+    const project = await ProjectModel.findById(req.params.projectId);
+    project.title = req.body.title ? req.body.title : project.title;
+    project.summary = req.body.summary ? req.body.summary : project.summary;
+    project.category = req.body.category ? req.body.category : project.category;
+    project.location = req.body.location ? req.body.location : project.location;
+    project.Description = req.body.Description ? req.body.Description : project.Description;
+    project.files = req.body.files ? req.body.files : project.files;
+
+    await project.save();
+    res.send(project);
   } catch (error) {
     console.log(error);
     next(error);
@@ -42,30 +105,11 @@ projectsRouter.get("/", async (req, res, next) => {
     console.log(req.query);
     console.log(q2m(req.query));
     const mongoquery = q2m(req.query);
-    // const response = await ProjectModel.find().populate("seller", { firstname: 1, lastname: 1, picture: 1 });
     const response = await ProjectModel.find(mongoquery.criteria)
       .populate("seller", { firstname: 1, lastname: 1, picture: 1 })
       .sort(mongoquery.options.sort)
       .skip(mongoquery.options.skip)
       .limit(mongoquery.options.limit);
-    res.status(201).send(response);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
-
-projectsRouter.get("/category", async (req, res, next) => {
-  try {
-    console.log(req.query);
-    console.log(q2m(req.query));
-    const mongoquery = q2m(req.query);
-    const response = await ProjectModel.find({}, { category: 1 });
-    // const response = await ProjectModel.find(mongoquery.criteria)
-    //   .populate("seller", { firstname: 1, lastname: 1, picture: 1 })
-    //   .sort(mongoquery.options.sort)
-    //   .skip(mongoquery.options.skip)
-    //   .limit(mongoquery.options.limit);
     res.status(201).send(response);
   } catch (error) {
     console.log(error);
@@ -105,84 +149,21 @@ projectsRouter.get("/search/:query", async (req, res, next) => {
   }
 });
 
-projectsRouter.get("/search/category/:query", async (req, res, next) => {
-  try {
-    const regex = new RegExp(req.params.query, "i");
-    console.log(regex);
-    // const projects = await ProjectModel.find({ summary: { $regex: regex } });
-    const projects = await ProjectModel.find({ category: { $regex: req.params.query } });
-
-    console.log(req.params.query);
-    console.log(projects);
-
-    res.send(projects);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
-const id = "";
-
-projectsRouter.get("/search/:query/:location", async (req, res, next) => {
-  try {
-    const regex = new RegExp(req.params.query, "i");
-    console.log(regex);
-    // const projects = await ProjectModel.find({ summary: { $regex: regex } });
-    // const projects = await ProjectModel.find({ summary: { $regex: req.params.query }  });
-    const projects = await ProjectModel.find({ $and: [{ summary: { $regex: req.params.query } }, { location: { $regex: req.params.location } }] });
-
-    console.log(req.params.query);
-    console.log(projects);
-
-    res.send(projects);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
-
-// const myCart = [];
-
-// projectsRouter.get("/:id/addToCart", async (req, res, next) => {
-//   try {
-//     const currentProject = await ProjectModel.findById(req.params.id);
-//     const newCart = [...myCart];
-//     newCart.push(currentProject);
-//     res.send(newCart);
-//   } catch (error) {
-//     console.log(error);
-//     next(error);
-//   }
-// });
-
-// projectsRouter.get("/myCart", async (req, res, next) => {
-//   try {
-//     const currentProject = await ProjectModel.findById(req.params.id);
-//     const newCart = [...myCart];
-//     newCart.push(currentProject);
-//     res.send(newCart);
-//   } catch (error) {
-//     console.log(error);
-//     next(error);
-//   }
-// });
-
 /**********************************************************/
-projectsRouter.post("/:id/bids", async (req, res, next) => {
+projectsRouter.post("/:projectid/:userId/bids", async (req, res, next) => {
   try {
     // const user = await UserModel.find({}).select("_id");
     // const user = req.user
     // console.log(user);
-    const singleProject = await ProjectModel.findById(req.params.id);
+    const user = await UserModel.findById(req.params.userId);
+    const currentProject = await ProjectModel.findById(req.params.projectid);
     const newBid = req.body;
-    const user = await UserModel.findById("6128d7f565384b4ca09f9406");
-    console.log(user);
     user.myBids.push(newBid);
     await user.save();
 
-    singleProject.bids.push(newBid);
-    await singleProject.save();
-    res.send(singleProject);
+    currentProject.bids.push(newBid);
+    await currentProject.save();
+    res.send(currentProject);
   } catch (error) {
     console.log(error);
     next(error);
@@ -196,7 +177,7 @@ projectsRouter.get("/:id/bids/:bidID", async (req, res, next) => {
     const bid = allBids.bids.filter((bid) => bid._id == req.params.bidID);
 
     if (bid) {
-      res.send(bid);
+      res.send(bid[0]);
     } else {
       next(createError(404, `bid ${req.params.bidID} not found `));
     }
@@ -206,50 +187,43 @@ projectsRouter.get("/:id/bids/:bidID", async (req, res, next) => {
   }
 });
 
-projectsRouter.delete("/me", JWTAuthMiddleware, async (req, res, next) => {
+projectsRouter.delete("/:projectId/bids/:bidId", async (req, res, next) => {
   try {
-    await req.user.deleteOne();
+    const projects = await ProjectModel.findById(req.params.projectId);
+    const allBids = projects.bids;
+    const remainingBids = allBids.filter((bid) => bid._id != req.params.bidId);
+    projects.bids = remainingBids;
+    await projects.save();
+    res.send(projects);
   } catch (error) {
     next(error);
   }
 });
-
-projectsRouter.put("/:id", async (req, res, next) => {
+projectsRouter.delete("/:projectId", async (req, res, next) => {
   try {
-    const project = await ProjectModel.findById(req.params.id);
-    project.summary = req.body.summary;
-    project.location = req.body.location;
-    project.Description = req.body.Description;
-    project.title = req.body.title;
-    await project.save();
-    res.send(project);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
-
-const cloudinaryStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "Capstone",
-  },
-});
-
-const upload = multer({ storage: cloudinaryStorage }).single("file");
-
-projectsRouter.post("/:id/uploadFile", upload, async (req, res, next) => {
-  try {
-    console.log(req.file);
-    const project = await ProjectModel.findById(req.params.id);
+    const project = await ProjectModel.findById(req.params.projectId);
     console.log(project);
-    project.files = req.file.path;
-    await project.save();
-    res.send(project.files);
+    await project.deleteOne(project);
   } catch (error) {
     next(error);
   }
 });
+
+// const upload = multer({ storage: cloudinaryStorage });
+
+// projectsRouter.post("/:id/uploadFile", upload.array('multi-files'), async (req, res, next) => {
+//   try {
+//     console.log(req);
+//     // console.log(req.file);
+//     // const project = await ProjectModel.findById(req.params.id);
+//     // console.log(project);
+//     // project.files = req.file.path;
+//     // await project.save();
+//     // res.send(project.files);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 projectsRouter.post("/sendmail/:bidderId", async (req, res, next) => {
   try {
