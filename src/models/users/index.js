@@ -1,6 +1,6 @@
 import express from "express";
 import UserModel from "./schema.js";
-// import RoomModel from "../Room/schema.js";
+import RoomModel from "../Room/schema.js";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
@@ -75,17 +75,17 @@ usersRouter.get("/", async (req, res, next) => {
   }
 });
 
-usersRouter.get("/me", JWTAuthMiddleware, async (req, res, next) => {
-  try {
-    console.log(req.user._id);
-    const response = await UserModel.findById(req.user._id).populate("projects");
+// usersRouter.get("/me", JWTAuthMiddleware, async (req, res, next) => {
+//   try {
+//     console.log(req.user._id);
+//     const response = await UserModel.findById(req.user._id).populate("projects");
 
-    res.send(response);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
+//     res.send(response);
+//   } catch (error) {
+//     console.log(error);
+//     next(error);
+//   }
+// });
 
 usersRouter.get("/:id", async (req, res, next) => {
   try {
@@ -114,25 +114,86 @@ usersRouter.get("/search/:query", JWTAuthMiddleware, async (req, res, next) => {
   }
 });
 
-usersRouter.delete("/me", JWTAuthMiddleware, async (req, res, next) => {
-  try {
-    await req.user.deleteOne();
-  } catch (error) {
-    next(error);
-  }
-});
+// usersRouter.delete("/me", JWTAuthMiddleware, async (req, res, next) => {
+//   try {
+//     await req.user.deleteOne();
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
-usersRouter.post("/me/updateProfile", JWTAuthMiddleware, async (req, res, next) => {
+// usersRouter.post("/me/updateProfile", JWTAuthMiddleware, async (req, res, next) => {
+//   try {
+//     const user = req.user;
+//     user.firstname = req.body.firstname ? req.body.firstname : user.firstname;
+//     user.lastname = req.body.lastname ? req.body.lastname : user.lastname;
+//     user.headline = req.body.headline ? req.body.headline : user.headline;
+//     user.languages = req.body.languages ? req.body.languages : user.languages;
+//     user.location = req.body.location;
+//     await user.save();
+//     console.log(user);
+//     res.send(user);
+//   } catch (error) {
+//     console.log(error);
+//     next(error);
+//   }
+// });
+
+usersRouter.put("/:id/updateProfile", async (req, res, next) => {
   try {
-    const user = req.user;
+    const user = await UserModel.findById(req.params.id);
+    console.log(user);
     user.firstname = req.body.firstname ? req.body.firstname : user.firstname;
     user.lastname = req.body.lastname ? req.body.lastname : user.lastname;
     user.headline = req.body.headline ? req.body.headline : user.headline;
     user.languages = req.body.languages ? req.body.languages : user.languages;
-    user.location = req.body.location;
+    user.location = req.body.location ? req.body.location : user.location;
+    user.occupation = req.body.occupation ? req.body.occupation : user.occupation;
+    user.avatar = req.body.avatar ? req.body.avatar : user.avatar;
+    user.skills = req.body.skills ? req.body.skills : user.skills;
     await user.save();
     console.log(user);
     res.send(user);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+usersRouter.post("/:id/experience", async (req, res, next) => {
+  try {
+    const user = await UserModel.findById(req.params.id);
+    console.log(user);
+    const myExperiences = user.experience;
+    const newExperience = req.body;
+    myExperiences.push(newExperience);
+    await user.save();
+    res.send(myExperiences);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+usersRouter.post("/:id/education", async (req, res, next) => {
+  try {
+    const user = await UserModel.findById(req.params.id);
+    const myEducation = user.education;
+    const newEducation = req.body;
+    myEducation.push(newEducation);
+    await user.save();
+    res.send(myEducation);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+usersRouter.post("/:id/skills", async (req, res, next) => {
+  try {
+    const user = await UserModel.findById(req.params.id);
+    const mySkills = req.user.skills;
+    const newSkill = req.body;
+    mySkills.push(newSkill);
+    await user.save();
+    res.send(mySkills);
   } catch (error) {
     console.log(error);
     next(error);
@@ -210,6 +271,34 @@ usersRouter.post("/me/bids", JWTAuthMiddleware, async (req, res, next) => {
     next(error);
   }
 });
+usersRouter.delete("/me/bids/:bidId", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    console.log(req.user);
+    const user = req.user;
+    const mybids = req.user.myBids;
+    // const bid = mybids.filter((bid) => bid._id == req.params.bidId);
+
+    const myNewBids = mybids((bid) => bid._id !== req.params.bidId);
+    user.myBids = myNewBids;
+    await user.save();
+    res.send(user);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
+usersRouter.delete("/:id/bids/:bidID", JWTAuthMiddleware, async (req, res, next) => {
+  try {
+    const allBids = await ProjectModel.findById(req.params.id).select("bids");
+    console.log(allBids.bids);
+    const bid = allBids.bids.filter((bid) => bid._id == req.params.bidID);
+
+    await req.user.deleteOne();
+  } catch (error) {
+    next(error);
+  }
+});
 
 const cloudinaryStorage = new CloudinaryStorage({
   cloudinary,
@@ -235,17 +324,17 @@ usersRouter.post("/me/uploadAvatar", upload, JWTAuthMiddleware, async (req, res,
 
 // const chatRooms = await RoomModel.find({ members: req.user._id }, { select: [ NO CHAT HISTORY ] })
 
-usersRouter.get("/me/chats", JWTAuthMiddleware, async (req, res) => {
-  console.log("req.user._id:", req.user._id);
-  const rooms = await RoomModel.find({ members: req.user._id }).populate("members");
-  // console.log('rooms:', rooms)
+usersRouter.get("/:userId/chats", async (req, res) => {
+  // console.log("req.user._id:", req.user._id);
+  const rooms = await RoomModel.find({ members: req.params.userId }).populate("members");
+  console.log('userrooms:', rooms)
   // const myChats = rooms.filter((item) => (item.members.includes(req.user._id)))
   // const chats = []
   // myChats.forEach((item) => (chats.push({ "title": item.title })))
   res.status(200).send(rooms);
 });
 
-usersRouter.get("/me/chat/:id", JWTAuthMiddleware, async (req, res) => {
+usersRouter.get("/me/chat/:id",  async (req, res) => {
   console.log("req.user._id:", req.user._id);
   const room = await RoomModel.find({ members: [req.user._id, req.params.id] });
   res.status(200).send(room);
