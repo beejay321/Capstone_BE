@@ -8,20 +8,22 @@ const projectsSchema = new mongoose.Schema(
     title: { type: String, required: true },
     summary: { type: String, required: true },
     location: { type: String, required: true },
-    category: { type: String, required: true,
-    //   // enum: [Design, Communications, Beauty, Entertainment, Photography, Business]
+    category: {
+      type: String,
+      required: true,
+      //   // enum: [Design, Communications, Beauty, Entertainment, Photography, Business]
     },
-    Description: { type: String, required: true },
-    files: { type: String },
+    Description: { type: String },
+    files: [{ type: String }],
     bids: [
       {
         user: { type: Schema.Types.ObjectId, ref: "user" },
         client: { type: Schema.Types.ObjectId, ref: "user" },
         projectTitle: { type: String },
         avatar: { type: String },
-        message: { type: String },
-        cost: { type: String },
-        duration: { type: String },
+        message: { type: String,  required: true},
+        cost: { type: String, required: true },
+        duration: { type: String, required: true },
       },
     ],
   },
