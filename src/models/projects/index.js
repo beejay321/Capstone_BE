@@ -27,6 +27,69 @@ projectsRouter.post("/:userId", async (req, res, next) => {
   }
 });
 
+const cloudinaryStorage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "CapstoneProjects",
+  },
+});
+
+const upload = multer({ storage: cloudinaryStorage }).single("file");
+
+// projectsRouter.post("/file/uploadFile", upload, async (req, res, next) => {
+//   try {
+//     console.log(req.file);
+//     res.send(req.file.path);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
+projectsRouter.post("/:id/uploadFile", upload, async (req, res, next) => {
+  try {
+    console.log(req.file);
+    const project = await ProjectModel.findById(req.params.id);
+    console.log(project);
+    project.files = req.file.path;
+    // project.files.push(req.file.path);
+    await project.save();
+    res.send(project);
+  } catch (error) {
+    next(error);
+  }
+});
+
+projectsRouter.put("/:id/uploadFile", upload, async (req, res, next) => {
+  try {
+    console.log(req.file);
+    const project = await ProjectModel.findById(req.params.id);
+    console.log(project);
+    // project.files = req.file.path;
+    project.files.push(req.file.path);
+    await project.save();
+    res.send(project.files);
+  } catch (error) {
+    next(error);
+  }
+});
+
+projectsRouter.put("/:projectId", async (req, res, next) => {
+  try {
+    const project = await ProjectModel.findById(req.params.projectId);
+    project.title = req.body.title ? req.body.title : project.title;
+    project.summary = req.body.summary ? req.body.summary : project.summary;
+    project.category = req.body.category ? req.body.category : project.category;
+    project.location = req.body.location ? req.body.location : project.location;
+    project.Description = req.body.Description ? req.body.Description : project.Description;
+    project.files = req.body.files ? req.body.files : project.files;
+
+    await project.save();
+    res.send(project);
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
 // projectsRouter.get("/", async (req, res, next) => {
 //   try {
 //     const response = await ProjectModel.find().populate("seller", { firstname: 1, lastname: 1, picture: 1 });
@@ -146,44 +209,21 @@ projectsRouter.delete("/:projectId", async (req, res, next) => {
   }
 });
 
-projectsRouter.put("/:projectId", async (req, res, next) => {
-  try {
-    const project = await ProjectModel.findById(req.params.projectId);
-    project.title = req.body.title ? req.body.title : project.title;
-    project.summary = req.body.summary ? req.body.summary : project.summary;
-    project.category = req.body.category ? req.body.category : project.category;
-    project.location = req.body.location ? req.body.location : project.location;
-    project.Description = req.body.Description ? req.body.Description : project.Description;
+// const upload = multer({ storage: cloudinaryStorage });
 
-    await project.save();
-    res.send(project);
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
-
-const cloudinaryStorage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: "Capstone",
-  },
-});
-
-const upload = multer({ storage: cloudinaryStorage }).single("file");
-
-projectsRouter.post("/:id/uploadFile", upload, async (req, res, next) => {
-  try {
-    console.log(req.file);
-    const project = await ProjectModel.findById(req.params.id);
-    console.log(project);
-    project.files = req.file.path;
-    await project.save();
-    res.send(project.files);
-  } catch (error) {
-    next(error);
-  }
-});
+// projectsRouter.post("/:id/uploadFile", upload.array('multi-files'), async (req, res, next) => {
+//   try {
+//     console.log(req);
+//     // console.log(req.file);
+//     // const project = await ProjectModel.findById(req.params.id);
+//     // console.log(project);
+//     // project.files = req.file.path;
+//     // await project.save();
+//     // res.send(project.files);
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 projectsRouter.post("/sendmail/:bidderId", async (req, res, next) => {
   try {
