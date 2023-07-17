@@ -8,7 +8,13 @@ import usersRouter from "./models/users/index.js";
 import projectsRouter from "./models/projects/index.js";
 import chatRouter from "./models/Room/index.js";
 import RoomModel from "./models/Room/schema.js";
-import { unAuthorizedHandler, notFoundErrorHandler, badRequestErrorHandler, forbiddenErrorHandler, catchAllErrorHandler } from "./errorHandlers.js";
+import {
+  unAuthorizedHandler,
+  notFoundErrorHandler,
+  badRequestErrorHandler,
+  forbiddenErrorHandler,
+  catchAllErrorHandler,
+} from "./errorHandlers.js";
 
 const app = express();
 app.use(cors());
@@ -50,7 +56,9 @@ io.on("connection", (socket) => {
     socket.to(message.selectedRoom).emit("message", message.messageToSend);
 
     //Send this event to everyone in the room.
-    io.sockets.in("room-" + message.selectedRoom).emit("connectToRoom", "You are in room no. " + message.selectedRoom);
+    io.sockets
+      .in("room-" + message.selectedRoom)
+      .emit("connectToRoom", "You are in room no. " + message.selectedRoom);
 
     console.log(message.selectedRoom);
   });
@@ -68,11 +76,13 @@ app.use(catchAllErrorHandler);
 
 const port = process.env.PORT;
 
-mongoose.connect(process.env.MONGO_CONNECTION, { useNewUrlParser: true }).then(() => {
-  console.log("Connected to mongo");
-  server.listen(port, () => {
-    console.table(listEndpoints(app));
-    console.log("Server listening on port " + port);
+mongoose
+  .connect(process.env.MONGO_CONNECTION, { useNewUrlParser: true })
+  .then(() => {
+    console.log("Connected to mongo");
+    server.listen(process.env.PORT, () => {
+      console.table(listEndpoints(app));
+      console.log("Server listening on port " + process.env.PORT);
+    });
   });
-});
 // Line2:26:'Col&
